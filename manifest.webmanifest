@@ -1,6 +1,6 @@
 {
   "name": "ChromaCanvas Pro",
-  "short_name": "ChromaCanvas",
+  "short_name": "ChromaCanvas Pro",
   "description": "A fast, offline digital painting studio for Windows: pressure-sensitive brushes, layers with blend modes, shapes, text and unlimited undo. Your artwork never leaves your device.",
   "id": "/ChromaCanvasPro/",
   "start_url": "./",

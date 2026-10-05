@@ -4,7 +4,7 @@
  *
  * IMPORTANT: bump VERSION whenever any file in ASSETS changes, so users receive the update.
  */
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const CACHE = `chromacanvas-pro-${VERSION}`;
 
 const ASSETS = [
