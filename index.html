@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ChromaCanvas Pro</title>
+  <meta name="description" content="ChromaCanvas Pro — a fast, offline digital painting app for Windows with pressure-sensitive brushes, layers, blend modes, shapes, text and unlimited undo.">
+  <meta name="application-name" content="ChromaCanvas Pro">
+  <meta name="theme-color" content="#111114" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f3f3f7" media="(prefers-color-scheme: light)">
+  <meta name="color-scheme" content="dark light">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <noscript><p class="noscript">ChromaCanvas Pro needs JavaScript to run.</p></noscript>
+
+  <div id="app" class="app" data-panel="visible">
+
+    <!-- ===== Title / menu bar (merges into the Windows title bar when the app is installed) ===== -->
+    <header class="menubar" id="menubar">
+      <div class="menubar-inner">
+        <div class="brand" aria-hidden="true">
+          <span class="brand-logo"><i data-icon="palette"></i></span>
+          <span class="brand-name">ChromaCanvas Pro</span>
+        </div>
+        <nav class="menus" id="menus" role="menubar" aria-label="Main menu"></nav>
+        <div class="menubar-actions">
+          <button class="icon-btn" id="btn-undo" title="Undo (Ctrl+Z)" aria-label="Undo"><i data-icon="undo-2"></i></button>
+          <button class="icon-btn" id="btn-redo" title="Redo (Ctrl+Y)" aria-label="Redo"><i data-icon="redo-2"></i></button>
+          <span class="vdivider"></span>
+          <button class="icon-btn" id="btn-theme" title="Switch light / dark theme" aria-label="Switch theme"><i data-icon="sun"></i></button>
+          <button class="icon-btn" id="btn-panels" title="Show / hide panels (Tab)" aria-label="Show or hide panels"><i data-icon="panel-right"></i></button>
+          <button class="btn primary" id="btn-export" title="Export image (Ctrl+Shift+E)"><i data-icon="download"></i><span>Export</span></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== Tool rail ===== -->
+    <aside class="toolrail" id="toolrail" aria-label="Tools">
+      <div class="tool-group">
+        <button class="tool-btn" data-tool="brush" title="Brush (B)" aria-label="Brush"><i data-icon="paintbrush"></i></button>
+        <button class="tool-btn" data-tool="eraser" title="Eraser (E)" aria-label="Eraser"><i data-icon="eraser"></i></button>
+        <button class="tool-btn" data-tool="fill" title="Fill (G)" aria-label="Fill"><i data-icon="paint-bucket"></i></button>
+        <button class="tool-btn" data-tool="eyedropper" title="Eyedropper (I) — also Alt+click or right-click" aria-label="Eyedropper"><i data-icon="pipette"></i></button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn" data-tool="line" title="Line (L) — hold Shift for 45° steps" aria-label="Line"><i data-icon="slash"></i></button>
+        <button class="tool-btn" data-tool="rect" title="Rectangle (R) — hold Shift for a square" aria-label="Rectangle"><i data-icon="square"></i></button>
+        <button class="tool-btn" data-tool="ellipse" title="Ellipse (O) — hold Shift for a circle" aria-label="Ellipse"><i data-icon="circle"></i></button>
+        <button class="tool-btn" data-tool="text" title="Text (T)" aria-label="Text"><i data-icon="type"></i></button>
+      </div>
+      <div class="tool-group">
+        <button class="tool-btn" data-tool="move" title="Move layer (M) — arrow keys nudge" aria-label="Move layer"><i data-icon="move"></i></button>
+        <button class="tool-btn" data-tool="hand" title="Hand / pan (H) — or hold Space" aria-label="Hand"><i data-icon="hand"></i></button>
+      </div>
+      <div class="tool-group bottom">
+        <div class="color-chips" id="color-chips">
+          <button class="chip chip-secondary" id="chip-secondary" title="Secondary color (Shift+click a swatch to set)" aria-label="Secondary color"></button>
+          <button class="chip chip-primary" id="chip-primary" title="Primary color" aria-label="Primary color"></button>
+          <button class="chip-swap" id="chip-swap" title="Swap colors (X)" aria-label="Swap colors"><i data-icon="arrow-left-right"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== Canvas workspace ===== -->
+    <main class="workspace" id="workspace">
+      <canvas id="view" class="view-canvas" aria-label="Drawing canvas"></canvas>
+      <canvas id="overlay" class="overlay-canvas"></canvas>
+      <div id="text-editor" class="text-editor hidden">
+        <textarea id="text-input" rows="1" spellcheck="false" placeholder="Type text…"></textarea>
+        <div class="text-editor-actions">
+          <button class="btn primary small" id="text-commit" title="Place text (Ctrl+Enter)">Place</button>
+          <button class="btn small" id="text-cancel" title="Cancel (Esc)">Cancel</button>
+        </div>
+      </div>
+      <div id="drop-hint" class="drop-hint hidden"><i data-icon="image-plus"></i><span>Drop images to add them as layers</span></div>
+    </main>
+
+    <!-- ===== Side panel ===== -->
+    <aside class="sidepanel" id="sidepanel" aria-label="Tool options, color and layers">
+      <div class="panel-scroll">
+
+        <section class="panel" id="panel-tool">
+          <header class="panel-header"><h2 id="tool-title">Brush</h2><span class="panel-sub" id="tool-sub"></span></header>
+
+          <!-- Brush presets -->
+          <div class="tool-opts" data-for="brush">
+            <div class="brush-grid" id="brush-grid" role="radiogroup" aria-label="Brush presets"></div>
+          </div>
+
+          <!-- Brush / eraser settings -->
+          <div class="tool-opts" data-for="brush eraser">
+            <label class="slider-row"><span class="slider-label">Size</span><span class="slider-val" id="val-size">15 px</span>
+              <input type="range" id="sl-size" min="1" max="300" value="15" step="1"></label>
+            <label class="slider-row"><span class="slider-label">Opacity</span><span class="slider-val" id="val-opacity">100%</span>
+              <input type="range" id="sl-opacity" min="1" max="100" value="100"></label>
+            <label class="slider-row"><span class="slider-label">Flow</span><span class="slider-val" id="val-flow">100%</span>
+              <input type="range" id="sl-flow" min="1" max="100" value="100"></label>
+            <label class="slider-row"><span class="slider-label">Hardness</span><span class="slider-val" id="val-hardness">80%</span>
+              <input type="range" id="sl-hardness" min="0" max="100" value="80"></label>
+            <label class="slider-row"><span class="slider-label">Spacing</span><span class="slider-val" id="val-spacing">10%</span>
+              <input type="range" id="sl-spacing" min="2" max="100" value="10"></label>
+            <label class="slider-row"><span class="slider-label">Stabilizer</span><span class="slider-val" id="val-smoothing">30%</span>
+              <input type="range" id="sl-smoothing" min="0" max="95" value="30"></label>
+
+            <div class="opt-row">
+              <span class="opt-label">Pen pressure</span>
+              <label class="check"><input type="checkbox" id="chk-pressure-size" checked><span>Size</span></label>
+              <label class="check"><input type="checkbox" id="chk-pressure-flow" checked><span>Flow</span></label>
+            </div>
+            <div class="opt-row">
+              <span class="opt-label">Symmetry</span>
+              <div class="segmented" id="symmetry" role="radiogroup" aria-label="Symmetry">
+                <button class="seg-btn active" data-sym="none" title="No symmetry">Off</button>
+                <button class="seg-btn" data-sym="h" title="Mirror left / right"><i data-icon="flip-horizontal-2"></i></button>
+                <button class="seg-btn" data-sym="v" title="Mirror top / bottom"><i data-icon="flip-vertical-2"></i></button>
+                <button class="seg-btn" data-sym="both" title="Mirror both ways">4×</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shape settings -->
+          <div class="tool-opts" data-for="line rect ellipse">
+            <div class="opt-row">
+              <span class="opt-label">Style</span>
+              <div class="segmented" id="shape-mode" role="radiogroup" aria-label="Shape style">
+                <button class="seg-btn active" data-mode="stroke" title="Outline only">Outline</button>
+                <button class="seg-btn" data-mode="fill" title="Filled with the primary color">Fill</button>
+                <button class="seg-btn" data-mode="both" title="Outline in primary, fill in secondary color">Both</button>
+              </div>
+            </div>
+            <label class="slider-row"><span class="slider-label">Line width</span><span class="slider-val" id="val-shape-width">6 px</span>
+              <input type="range" id="sl-shape-width" min="1" max="200" value="6"></label>
+            <label class="slider-row"><span class="slider-label">Opacity</span><span class="slider-val" id="val-shape-opacity">100%</span>
+              <input type="range" id="sl-shape-opacity" min="1" max="100" value="100"></label>
+            <p class="hint">Drag on the canvas to draw. Hold <kbd>Shift</kbd> to constrain the proportions.</p>
+          </div>
+
+          <!-- Fill settings -->
+          <div class="tool-opts" data-for="fill">
+            <label class="slider-row"><span class="slider-label">Tolerance</span><span class="slider-val" id="val-tolerance">32</span>
+              <input type="range" id="sl-tolerance" min="0" max="255" value="32"></label>
+            <label class="slider-row"><span class="slider-label">Opacity</span><span class="slider-val" id="val-fill-opacity">100%</span>
+              <input type="range" id="sl-fill-opacity" min="1" max="100" value="100"></label>
+            <div class="opt-row">
+              <label class="check"><input type="checkbox" id="chk-fill-all" checked><span>Sample all layers</span></label>
+            </div>
+            <p class="hint">Click an area to fill it with the primary color. The fill goes onto the active layer.</p>
+          </div>
+
+          <!-- Text settings -->
+          <div class="tool-opts" data-for="text">
+            <div class="opt-row">
+              <span class="opt-label">Font</span>
+              <select id="sel-font" class="select" aria-label="Font family"></select>
+            </div>
+            <div class="opt-row">
+              <span class="opt-label">Size</span>
+              <input type="number" id="inp-text-size" class="input num" min="4" max="800" value="48" aria-label="Font size in pixels">
+              <span class="unit">px</span>
+              <button class="icon-btn toggle" id="btn-text-bold" title="Bold" aria-pressed="false"><i data-icon="bold"></i></button>
+              <button class="icon-btn toggle" id="btn-text-italic" title="Italic" aria-pressed="false"><i data-icon="italic"></i></button>
+            </div>
+            <p class="hint">Click the canvas where the text should start, type, then press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> or <b>Place</b>.</p>
+          </div>
+
+          <!-- Eyedropper / Move / Hand hints -->
+          <div class="tool-opts" data-for="eyedropper">
+            <p class="hint">Click anywhere on the canvas to pick that color. The sample is taken from all visible layers. <kbd>Shift</kbd>+click picks the secondary color.</p>
+          </div>
+          <div class="tool-opts" data-for="move">
+            <p class="hint">Drag to move the contents of the active layer. Use the arrow keys to nudge by 1 px (<kbd>Shift</kbd> for 10 px).</p>
+          </div>
+          <div class="tool-opts" data-for="hand">
+            <p class="hint">Drag to pan. Zoom with <kbd>Ctrl</kbd>+wheel or a two-finger pinch. <kbd>Ctrl</kbd>+<kbd>0</kbd> fits the canvas to the window.</p>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-color">
+          <header class="panel-header"><h2>Color</h2><span class="panel-sub" id="color-sub">#60A5FA</span></header>
+          <div class="picker">
+            <div class="sv-wrap">
+              <canvas id="sv-square" width="256" height="160" aria-label="Saturation and brightness"></canvas>
+              <div class="sv-handle" id="sv-handle"></div>
+            </div>
+            <div class="hue-wrap">
+              <canvas id="hue-bar" width="256" height="14" aria-label="Hue"></canvas>
+              <div class="hue-handle" id="hue-handle"></div>
+            </div>
+            <div class="color-row">
+              <span class="color-preview" id="color-preview"></span>
+              <input type="text" id="inp-hex" class="input mono" maxlength="7" spellcheck="false" aria-label="Hex color" value="#60A5FA">
+              <button class="icon-btn" id="btn-pick" title="Eyedropper (I)" aria-label="Eyedropper"><i data-icon="pipette"></i></button>
+            </div>
+            <div class="swatches" id="swatches" aria-label="Color swatches"></div>
+            <div class="recent-wrap">
+              <span class="opt-label">Recent</span>
+              <div class="swatches recent" id="recent-colors"></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <section class="panel layers-panel" id="panel-layers">
+        <div class="splitter" id="layers-splitter" title="Drag to resize the Layers panel" role="separator" aria-orientation="horizontal"></div>
+        <header class="panel-header">
+          <h2>Layers</h2>
+          <div class="layer-actions">
+            <button class="icon-btn xs" id="btn-layer-add" title="New layer (Ctrl+Shift+N)" aria-label="New layer"><i data-icon="plus"></i></button>
+            <button class="icon-btn xs" id="btn-layer-dup" title="Duplicate layer (Ctrl+J)" aria-label="Duplicate layer"><i data-icon="copy"></i></button>
+            <button class="icon-btn xs" id="btn-layer-merge" title="Merge down (Ctrl+E)" aria-label="Merge down"><i data-icon="arrow-down-to-line"></i></button>
+            <button class="icon-btn xs" id="btn-layer-up" title="Move layer up" aria-label="Move layer up"><i data-icon="chevron-up"></i></button>
+            <button class="icon-btn xs" id="btn-layer-down" title="Move layer down" aria-label="Move layer down"><i data-icon="chevron-down"></i></button>
+            <button class="icon-btn xs danger" id="btn-layer-del" title="Delete layer" aria-label="Delete layer"><i data-icon="trash-2"></i></button>
+          </div>
+        </header>
+        <div class="layer-props">
+          <select id="sel-blend" class="select" aria-label="Blend mode"></select>
+          <label class="slider-inline"><span class="slider-val" id="val-layer-opacity">100%</span>
+            <input type="range" id="sl-layer-opacity" min="0" max="100" value="100" aria-label="Layer opacity"></label>
+        </div>
+        <ul class="layer-list" id="layer-list" role="listbox" aria-label="Layers"></ul>
+      </section>
+    </aside>
+
+    <!-- ===== Status bar ===== -->
+    <footer class="statusbar">
+      <span class="status-item" id="status-input" title="Input device and pressure"><i data-icon="mouse"></i><span>Mouse</span></span>
+      <span class="status-item mono" id="status-pos" title="Pointer position">—</span>
+      <span class="status-item mono" id="status-size" title="Canvas size">1920 × 1080 px</span>
+      <span class="spacer"></span>
+      <span class="status-item" id="status-save" title="Autosave"><i data-icon="circle-check"></i><span>Saved</span></span>
+      <div class="zoom-ctl" role="group" aria-label="Zoom">
+        <button class="icon-btn xs" id="zoom-out" title="Zoom out (Ctrl+-)" aria-label="Zoom out"><i data-icon="zoom-out"></i></button>
+        <input type="text" id="zoom-value" class="zoom-input mono" value="100%" aria-label="Zoom level" inputmode="numeric">
+        <button class="icon-btn xs" id="zoom-in" title="Zoom in (Ctrl++)" aria-label="Zoom in"><i data-icon="zoom-in"></i></button>
+        <button class="icon-btn xs" id="zoom-fit" title="Fit to window (Ctrl+0)" aria-label="Fit to window"><i data-icon="maximize"></i></button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ===== Dialogs ===== -->
+  <dialog class="dialog" id="dlg-new">
+    <form method="dialog" id="form-new">
+      <h3>New canvas</h3>
+      <div class="form-grid">
+        <label>Preset
+          <select id="new-preset" class="select"></select>
+        </label>
+        <div class="dims">
+          <label>Width <input type="number" id="new-width" class="input" min="1" max="8192" value="1920" required> <span class="unit">px</span></label>
+          <button type="button" class="icon-btn" id="new-swap" title="Swap width and height" aria-label="Swap width and height"><i data-icon="arrow-left-right"></i></button>
+          <label>Height <input type="number" id="new-height" class="input" min="1" max="8192" value="1080" required> <span class="unit">px</span></label>
+        </div>
+        <fieldset class="radio-row">
+          <legend>Background</legend>
+          <label class="radio"><input type="radio" name="bg" value="white" checked><span>White</span></label>
+          <label class="radio"><input type="radio" name="bg" value="transparent"><span>Transparent</span></label>
+          <label class="radio"><input type="radio" name="bg" value="custom"><span>Color</span></label>
+          <input type="color" id="new-bg-color" value="#f1e9d8" aria-label="Custom background color">
+        </fieldset>
+        <p class="hint" id="new-warning"></p>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" value="cancel" data-close>Cancel</button>
+        <button type="submit" class="btn primary" value="ok">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="dlg-canvas-size">
+    <form method="dialog" id="form-canvas-size">
+      <h3>Canvas size</h3>
+      <p class="dialog-desc">Changes the canvas area without scaling the artwork. Choose where the existing artwork should stay anchored.</p>
+      <div class="form-grid">
+        <div class="dims">
+          <label>Width <input type="number" id="cs-width" class="input" min="1" max="8192" required> <span class="unit">px</span></label>
+          <label>Height <input type="number" id="cs-height" class="input" min="1" max="8192" required> <span class="unit">px</span></label>
+        </div>
+        <div class="anchor-grid" id="anchor-grid" role="radiogroup" aria-label="Anchor">
+          <button type="button" data-anchor="nw"></button><button type="button" data-anchor="n"></button><button type="button" data-anchor="ne"></button>
+          <button type="button" data-anchor="w"></button><button type="button" data-anchor="c" class="active"></button><button type="button" data-anchor="e"></button>
+          <button type="button" data-anchor="sw"></button><button type="button" data-anchor="s"></button><button type="button" data-anchor="se"></button>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Apply</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="dlg-image-size">
+    <form method="dialog" id="form-image-size">
+      <h3>Resize image</h3>
+      <p class="dialog-desc">Scales every layer to the new size.</p>
+      <div class="form-grid">
+        <div class="dims">
+          <label>Width <input type="number" id="is-width" class="input" min="1" max="8192" required> <span class="unit">px</span></label>
+          <label>Height <input type="number" id="is-height" class="input" min="1" max="8192" required> <span class="unit">px</span></label>
+        </div>
+        <label class="check"><input type="checkbox" id="is-lock" checked><span>Keep aspect ratio</span></label>
+        <div class="opt-row">
+          <span class="opt-label">Scale</span>
+          <div class="segmented" id="is-presets">
+            <button type="button" class="seg-btn" data-pct="25">25%</button>
+            <button type="button" class="seg-btn" data-pct="50">50%</button>
+            <button type="button" class="seg-btn" data-pct="200">200%</button>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Resize</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="dlg-export">
+    <form method="dialog" id="form-export">
+      <h3>Export image</h3>
+      <div class="form-grid">
+        <label>Format
+          <select id="ex-format" class="select">
+            <option value="image/png">PNG — lossless, keeps transparency</option>
+            <option value="image/jpeg">JPEG — small photos, no transparency</option>
+            <option value="image/webp">WebP — small, keeps transparency</option>
+          </select>
+        </label>
+        <label class="slider-row" id="ex-quality-row"><span class="slider-label">Quality</span><span class="slider-val" id="ex-quality-val">92%</span>
+          <input type="range" id="ex-quality" min="10" max="100" value="92"></label>
+        <label class="slider-row"><span class="slider-label">Scale</span><span class="slider-val" id="ex-scale-val">100%</span>
+          <input type="range" id="ex-scale" min="10" max="400" value="100" step="5"></label>
+        <p class="hint mono" id="ex-dims"></p>
+        <label class="check"><input type="checkbox" id="ex-layer-only"><span>Export the active layer only</span></label>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="btn" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Export</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog wide" id="dlg-shortcuts">
+    <form method="dialog">
+      <h3>Keyboard shortcuts</h3>
+      <div class="shortcuts" id="shortcuts-body"></div>
+      <div class="dialog-actions"><button type="submit" class="btn primary">Close</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="dlg-tips">
+    <form method="dialog">
+      <h3>Quick start</h3>
+      <ol class="tips">
+        <li><b>Pick a brush</b> on the right — Pencil, Ink Pen, Marker, Oil, Watercolor, Airbrush or Chalk — and set its size, opacity and flow.</li>
+        <li><b>Paint</b> with a pen, mouse or finger. Pen pressure changes the stroke size and flow automatically.</li>
+        <li><b>Use layers</b> to keep sketch, line-art and colors separate. Change a layer's blend mode and opacity in the Layers panel.</li>
+        <li><b>Zoom and pan</b> with <kbd>Ctrl</kbd>+wheel, a two-finger pinch, or hold <kbd>Space</kbd> and drag.</li>
+        <li><b>Undo</b> anything with <kbd>Ctrl</kbd>+<kbd>Z</kbd>. Your work is saved automatically and restored the next time you open the app.</li>
+        <li><b>Save a project</b> (<kbd>Ctrl</kbd>+<kbd>S</kbd>) to keep your layers editable, or <b>Export</b> a PNG, JPEG or WebP to share.</li>
+      </ol>
+      <div class="dialog-actions"><button type="submit" class="btn primary">Start painting</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="dlg-about">
+    <form method="dialog">
+      <div class="about">
+        <span class="about-logo"><i data-icon="palette"></i></span>
+        <h3>ChromaCanvas Pro</h3>
+        <p class="about-version">Version <span id="about-version">1.0.0</span></p>
+        <p>A fast, offline digital painting studio for Windows: pressure-sensitive brushes, layers with blend modes, shapes, text and unlimited undo. Your artwork never leaves your device.</p>
+        <p class="about-links">
+          <a href="privacy.html" target="_blank" rel="noopener">Privacy policy</a> ·
+          <a href="mailto:haymohsen@gmail.com">Support</a>
+        </p>
+        <p class="about-credits">Icons by <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (ISC License).</p>
+      </div>
+      <div class="dialog-actions"><button type="submit" class="btn primary">Close</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="dlg-confirm">
+    <form method="dialog">
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p class="dialog-desc" id="confirm-msg"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn" id="confirm-cancel" data-close>Cancel</button>
+        <button type="button" class="btn hidden" id="confirm-alt">Save first</button>
+        <button type="submit" class="btn primary" id="confirm-ok" value="ok">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <input type="file" id="file-input" class="visually-hidden" accept=".ccp,application/json,image/png,image/jpeg,image/webp,image/gif,image/bmp,image/svg+xml" multiple>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</body>
+</html>

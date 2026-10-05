@@ -1,0 +1,56 @@
+{
+  "name": "ChromaCanvas Pro",
+  "short_name": "ChromaCanvas",
+  "description": "A fast, offline digital painting studio for Windows: pressure-sensitive brushes, layers with blend modes, shapes, text and unlimited undo. Your artwork never leaves your device.",
+  "id": "/ChromaCanvasPro/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "any",
+  "background_color": "#111114",
+  "theme_color": "#111114",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["graphics", "productivity", "art", "photo"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/screenshot-1-painting.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Painting with pressure-sensitive brushes and layers" },
+    { "src": "screenshots/screenshot-2-colors.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "HSV color picker, swatches and brush settings" },
+    { "src": "screenshots/screenshot-3-shapes-text.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Shapes, text and symmetry painting" },
+    { "src": "screenshots/screenshot-4-light.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Light theme" }
+  ],
+  "shortcuts": [
+    {
+      "name": "New canvas",
+      "short_name": "New",
+      "description": "Start a new blank canvas",
+      "url": "./?action=new",
+      "icons": [{ "src": "icons/shortcut-new.png", "sizes": "96x96", "type": "image/png" }]
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": { "application/json": [".ccp"] }
+    },
+    {
+      "action": "./",
+      "accept": {
+        "image/png": [".png"],
+        "image/jpeg": [".jpg", ".jpeg"],
+        "image/webp": [".webp"],
+        "image/gif": [".gif"],
+        "image/bmp": [".bmp"]
+      }
+    }
+  ]
+}
